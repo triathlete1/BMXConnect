@@ -1,0 +1,11 @@
+<!-- Indices written at Sun, 8 Jan 2012 06:35:28 UTC -->
+
+<datastore-indexes>
+
+    <!-- Used 1 time in query history -->
+    <datastore-index kind="ResultRecord" ancestor="false" source="auto">
+        <property name="accountName" direction="asc"/>
+        <property name="resultDate" direction="desc"/>
+    </datastore-index>
+
+</datastore-indexes>

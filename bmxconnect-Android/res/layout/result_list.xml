@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent">
+    
+    <TextView
+        android:id="@+id/header"
+        android:layout_width="fill_parent"
+        android:layout_height="60dip"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/imageView1"
+        android:background="@drawable/gradient"
+        android:gravity="center_vertical"
+        android:paddingLeft="10dip"
+        android:text="@string/app_name"
+        android:textColor="#ffffff"
+        android:textSize="16dip" />
+
+    <ImageView
+        android:id="@+id/imageView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/header"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:background="@drawable/gradient"
+        android:gravity="center_vertical"
+        android:src="@drawable/bmxconnect_app_icon" />
+    
+	<ListView
+		android:id="@id/android:list"
+		android:layout_width="fill_parent"
+		android:layout_height="fill_parent"
+		android:layout_below="@+id/header"
+        android:fillViewport="true" />
+	<TextView
+	    android:id="@id/android:empty"
+	    style="@android:style/TextAppearance.Medium"
+	    android:layout_width="fill_parent"
+	    android:layout_height="fill_parent"
+	    android:layout_below="@+id/header"
+	    android:gravity="center"
+	    android:text="@string/no_notifications_exist"
+	    android:textColor="?android:textColorSecondary"
+	    android:textStyle="italic"
+	    android:typeface="serif" />
+    		    
+<!-- 
+    <ScrollView
+        android:id="@+id/scrollView1"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/header" >
+                <LinearLayout
+            android:id="@+id/linearLayout1"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:fillViewport="true" >
+            
+	        <TextView
+	            android:id="@id/android:empty"
+	            style="@android:style/TextAppearance.Medium"
+	            android:layout_width="fill_parent"
+	            android:layout_height="102dp"
+	            android:gravity="center"
+	            android:text="@string/no_notifications_exist"
+	            android:textColor="?android:textColorSecondary"
+	            android:textStyle="italic"
+	            android:typeface="serif" />
+
+        </LinearLayout>
+
+    </ScrollView>
+ -->
+</RelativeLayout>
