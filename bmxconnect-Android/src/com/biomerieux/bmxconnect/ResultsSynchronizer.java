@@ -2,11 +2,9 @@ package com.biomerieux.bmxconnect;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -14,22 +12,15 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.cookie.BasicClientCookie;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.SharedPreferences.Editor;
 import android.util.Log;
 import android.widget.Toast;
 
-import com.biomerieux.bmxconnect.shared.rest.Result;
 import com.biomerieux.bmxconnect.shared.rest.ResultList;
 
 public class ResultsSynchronizer {
-	private static final String RESULT_DATA_PREFERENCES_KEY = "jsonResults";
-
 	/**
      * Tag for logging.
      */
@@ -37,17 +28,24 @@ public class ResultsSynchronizer {
     
     private static final String REST_RESULTS_URI = "/rest/results";
 
-    private ObjectMapper objectMapper;
+    private final RegistrationHelper registrationHelper;
+    private ResultsDataManager resultsDataManager;
 
-    public ResultsSynchronizer() {
-        objectMapper = new ObjectMapper();
-    	objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+	public ResultsSynchronizer(final RegistrationHelper registrationHelper) {
+    	this.registrationHelper = registrationHelper;
+    	resultsDataManager = new ResultsDataManager();
     }
 
-    public ResultList readResultsViaRest(Context mContext) {
-    	String REST_URL = Util.getBaseUrl(mContext) + REST_RESULTS_URI;
+	public void readResultsViaRestAsync(AuthenticationCallback callback) {
 
-        final SharedPreferences prefs = Util.getSharedPreferences(mContext);
+    	// Make sure the auth cookie is current
+    	registrationHelper.refreshAuthenticationToken(callback);
+	}
+
+	public ResultList readResultsViaRest() {
+
+    	final Context mContext = registrationHelper.getmContext();
+    	final SharedPreferences prefs = Util.getSharedPreferences(mContext);
         String authCookie = prefs.getString(Util.AUTH_COOKIE_RAW, null);
         if (authCookie == null) {
         	displayErrorResponseMessage("No authorization cookie found.", -1);
@@ -62,6 +60,7 @@ public class ResultsSynchronizer {
         } catch (URISyntaxException e) {
         }
         
+        String REST_URL = Util.getBaseUrl(mContext) + REST_RESULTS_URI;
         HttpGet request = new HttpGet(REST_URL);
         request.setHeader("Content-Type", "application/json;charset=UTF-8");
 //        request.setHeader("Cookie", authCookie);
@@ -88,8 +87,8 @@ public class ResultsSynchronizer {
             HttpEntity entity = httpResponse.getEntity();
             if (entity != null) {
                 InputStream instream = entity.getContent();
-                String jsonString = storeJsonDataInUserPrefs(prefs, instream);
-                results = objectMapper.readValue(jsonString, ResultList.class);
+                String jsonString = resultsDataManager.storeJsonDataInUserPrefs(prefs, instream);
+                results = resultsDataManager.parseJsonResults(jsonString);
 
                 // Closing the input stream will trigger connection release
                 instream.close();
@@ -116,62 +115,4 @@ public class ResultsSynchronizer {
     	Log.e(TAG, "Response code: " + responseCode + ". " + message.toString());
     	throw new RuntimeException("Response code: " + responseCode + ". " + message.toString());
     }
-
-//    public void clearResultData(final SharedPreferences prefs) {
-//		Editor editor = prefs.edit();
-//		editor.putString(RESULT_DATA_PREFERENCES_KEY, null);
-//		editor.commit();
-//    }
-    
-	private String storeJsonDataInUserPrefs(final SharedPreferences prefs, InputStream instream) throws IOException {
-		StringWriter writer = new StringWriter();
-		IOUtils.copy(instream, writer, "UTF-8");
-		String jsonString = writer.toString();
-		
-		//TODO: check for html = auth failure
-		
-		Editor editor = prefs.edit();
-		editor.putString(RESULT_DATA_PREFERENCES_KEY, jsonString);
-		editor.commit();
-		return jsonString;
-	}
-
-	public void addNewResult(final SharedPreferences prefs, Result result) {
-		ResultList results = readSavedResults(prefs);
-		results.getResults().add(result);
-		String resultString = createJsonResultString(results);
-		
-		Editor editor = prefs.edit();
-		editor.putString(RESULT_DATA_PREFERENCES_KEY, resultString);
-		editor.commit();
-	}
-	
-	public ResultList readSavedResults(final SharedPreferences prefs) {
-		String resultString = prefs.getString(RESULT_DATA_PREFERENCES_KEY, null);
-		ResultList results = new ResultList();
-    	if (null != resultString) {
-    		results = parseJsonResults(resultString);
-    	}
-		return results;
-	}
-
-	private ResultList parseJsonResults(String resultString) {
-		try {
-			ResultList results = objectMapper.readValue(resultString, ResultList.class);
-			return results;
-		} catch (Exception e) {
-			Log.e(TAG, "Unexpected exception reading JSON result data: " + Util.getStackTrace(e));
-		}
-		return new ResultList();
-	}
-
-	private String createJsonResultString(ResultList results) {
-		try {
-			String resultString = objectMapper.writeValueAsString(results);
-			return resultString;
-		} catch (Exception e) {
-			Log.e(TAG, "Unexpected exception reading JSON result data: " + Util.getStackTrace(e));
-		}
-		return null;
-	}
 }

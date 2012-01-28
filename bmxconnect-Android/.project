@@ -35,7 +35,13 @@
 		<link>
 			<name>shared</name>
 			<type>2</type>
-			<locationURI>WORKSPACE_LOC/bmxconnect-AppEngine/shared</locationURI>
+			<locationURI>gitrepo_loc/BMXConnect/bmxconnect-AppEngine/shared</locationURI>
 		</link>
 	</linkedResources>
+	<variableList>
+		<variable>
+			<name>gitrepo_loc</name>
+			<value>file:/C:/Users/brian/Documents/Brian/gitrepos</value>
+		</variable>
+	</variableList>
 </projectDescription>

@@ -41,12 +41,14 @@ public class C2DMReceiver extends C2DMBaseReceiver {
      */
     private static final String TAG = "C2DMReceiver";
 
-	ResultsSynchronizer resultsSynchronizer;
-	
+    ResultsDataManager resultsDataManager;
+    final Intent updateUIOnMessageIntent;
+    
     public C2DMReceiver() {
         super(Setup.SENDER_ID);
         
-        resultsSynchronizer = new ResultsSynchronizer();
+        resultsDataManager = new ResultsDataManager();
+        updateUIOnMessageIntent = new Intent(Util.UPDATE_UI_ON_MESSAGE_INTENT);
     }
 
     /**
@@ -82,7 +84,7 @@ public class C2DMReceiver extends C2DMBaseReceiver {
      */
     @Override
     public void onError(Context context, String errorId) {
-        context.sendBroadcast(new Intent(Util.UPDATE_UI_INTENT));
+        context.sendBroadcast(new Intent(Util.UPDATE_UI_WITH_REGISTRATION_CHANGE_INTENT));
     }
 
     /**
@@ -105,12 +107,14 @@ public class C2DMReceiver extends C2DMBaseReceiver {
         result.setAccountName(sender);
         result.setResult(message);
 		result.setResultDateString(date);
-        resultsSynchronizer.addNewResult(prefs, result);
+		resultsDataManager.addNewResult(prefs, result);
 
         // TODO: display unacknowledged result count with a link to an activity that shows a list - user should be able to ack items on the list to clear them
-//        MessageDisplay.displayMessage(context, intent);
 
         // Show a result notification
         Util.generateResultNotification(context, message, date);
+        
+        // Refresh the UI
+        context.sendBroadcast(updateUIOnMessageIntent);
     }
 }

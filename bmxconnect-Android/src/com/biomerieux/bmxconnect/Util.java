@@ -101,7 +101,12 @@ public class Util {
     /**
      * An intent name for receiving registration/unregistration status.
      */
-    public static final String UPDATE_UI_INTENT = getPackageName() + ".UPDATE_UI";
+    public static final String UPDATE_UI_WITH_REGISTRATION_CHANGE_INTENT = getPackageName() + ".UPDATE_UI";
+
+    /**
+     * An intent name for receiving registration/unregistration status.
+     */
+    public static final String UPDATE_UI_ON_MESSAGE_INTENT = getPackageName() + ".UPDATE_UI_ON_MESSAGE";
 
     // End shared constants
 

@@ -49,7 +49,7 @@ public class DeviceRegistrar {
             final String deviceRegistrationId, final boolean register) {
         final SharedPreferences settings = Util.getSharedPreferences(context);
         final String accountName = settings.getString(Util.ACCOUNT_NAME, "Unknown");
-        final Intent updateUIIntent = new Intent(Util.UPDATE_UI_INTENT);
+        final Intent updateUIIntent = new Intent(Util.UPDATE_UI_WITH_REGISTRATION_CHANGE_INTENT);
 
         RegistrationInfoRequest request = getRequest(context);
         RegistrationInfoProxy proxy = request.create(RegistrationInfoProxy.class);

@@ -1,6 +1,5 @@
 package com.biomerieux.bmxconnect;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -10,8 +9,10 @@ import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.ListActivity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -24,7 +25,6 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.biomerieux.bmxconnect.shared.rest.Result;
@@ -33,21 +33,66 @@ import com.biomerieux.bmxconnect.shared.rest.ResultList;
 /**
  * Class refreshes data from the server.
  */
-public class ResultsActivity extends ListActivity {
+public class ResultsActivity extends ListActivity implements AuthenticationCallback {
 
     private Context mContext = this;
 
     private ObjectMapper objectMapper;
 
     private ResultsSynchronizer resultsSynchronizer;
+    private ResultsDataManager resultsDataManager;
+    private RegistrationHelper registrationHelper;
     
     private List<Map<String, String>> resultTextList;
 
+    /**
+     * A {@link BroadcastReceiver} to receive the response from a register or
+     * unregister request, and to update the UI.
+     */
+    private final BroadcastReceiver mUpdateUIAfterRegistrationReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String accountName = intent.getStringExtra(DeviceRegistrar.ACCOUNT_NAME_EXTRA);
+            int status = intent.getIntExtra(DeviceRegistrar.STATUS_EXTRA, DeviceRegistrar.ERROR_STATUS);
+            String message = null;
+            String connectionStatus = Util.DISCONNECTED;
+            if (status == DeviceRegistrar.REGISTERED_STATUS) {
+                message = getResources().getString(R.string.registration_succeeded);
+                connectionStatus = Util.CONNECTED;
+            } else if (status == DeviceRegistrar.UNREGISTERED_STATUS) {
+                message = getResources().getString(R.string.unregistration_succeeded);
+            } else {
+                message = getResources().getString(R.string.registration_error);
+            }
+
+            // Set connection status
+            SharedPreferences prefs = Util.getSharedPreferences(mContext);
+            prefs.edit().putString(Util.CONNECTION_STATUS, connectionStatus).commit();
+
+            // Display a notification
+            Util.generateRegistrationNotification(mContext, String.format(message, accountName));
+            
+            // Pull the current data if just registered
+            if (connectionStatus == Util.CONNECTED) {
+    			refreshDataFromServerAsync();            	
+            }
+        }
+    };
+
+    private final BroadcastReceiver mUpdateUIAfterMessageReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+        	refreshDisplayData();
+        }
+    };
+    
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 
-		resultsSynchronizer = new ResultsSynchronizer();
+		registrationHelper = new RegistrationHelper(this);
+		resultsSynchronizer = new ResultsSynchronizer(registrationHelper);
+	    resultsDataManager = new ResultsDataManager();
 		
         objectMapper = new ObjectMapper();
     	objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -57,6 +102,10 @@ public class ResultsActivity extends ListActivity {
 		//Make a data list
 		resultTextList = new ArrayList<Map<String, String>>();
 		refreshDisplayData();
+		
+		// Register a receiver to provide register/unregister notifications
+		registerReceiver(mUpdateUIAfterRegistrationReceiver, new IntentFilter(Util.UPDATE_UI_WITH_REGISTRATION_CHANGE_INTENT));
+		registerReceiver(mUpdateUIAfterMessageReceiver, new IntentFilter(Util.UPDATE_UI_ON_MESSAGE_INTENT));
 		
 		registerForContextMenu(getListView());
 		
@@ -68,11 +117,27 @@ public class ResultsActivity extends ListActivity {
         		@SuppressWarnings("unchecked")
 				Map<String, String> o = (Map<String, String>) lv.getItemAtPosition(position);
         		Toast.makeText(ResultsActivity.this, "Item with timestamp '" + o.get("timestamp") + "' was clicked.", Toast.LENGTH_LONG).show(); 
-
 			}
 		});
 	}
 	
+	@Override
+	protected void onResume() {
+		super.onResume();
+
+        SharedPreferences prefs = Util.getSharedPreferences(mContext);
+        String connectionStatus = prefs.getString(Util.CONNECTION_STATUS, Util.DISCONNECTED);
+        if (Util.DISCONNECTED.equals(connectionStatus)) {
+            startActivity(new Intent(this, AccountsActivity.class));
+        }
+	}
+
+    @Override
+    public void onDestroy() {
+        unregisterReceiver(mUpdateUIAfterRegistrationReceiver);
+        super.onDestroy();
+    }
+
 	@Override
 	protected void onRestoreInstanceState(Bundle state) {
 		refreshDisplayData();
@@ -92,7 +157,7 @@ public class ResultsActivity extends ListActivity {
 	private List<Map<String, String>> extractResultDisplayMap(List<Map<String, String>> resultTextList) {
         final SharedPreferences prefs = Util.getSharedPreferences(mContext);
         try {
-        	ResultList results = resultsSynchronizer.readSavedResults(prefs);
+        	ResultList results = resultsDataManager.readSavedResults(prefs);
         	resultTextList.clear(); // clear previous values
 			for (Result result : results.getResults()) {
 		    	Map<String, String> resultText = new HashMap<String, String>();
@@ -145,9 +210,10 @@ public class ResultsActivity extends ListActivity {
 				//TODO: refresh from server and show wait dialog - possibly optimize the refresh using the count/date of last entry?
 //		    	Toast.makeText(mContext, "Refreshing data from the server.  This may take a few minutes.", 20).show();
 		    	try {
-		    		resultsSynchronizer.readResultsViaRest(mContext);
+//TODO: begin wait cursor
+		    		resultsSynchronizer.readResultsViaRestAsync((AuthenticationCallback)mContext);
 				} catch(Exception e) {
-//		    		Toast.makeText(mContext, "ERROR: refreshing data from the server failed!" + e.getMessage(), 20).show();
+		    		Toast.makeText(mContext, "ERROR: refreshing data from the server failed!" + e.getMessage(), 20).show();
 					return e.getMessage();
 		    	}
 				return null;
@@ -159,21 +225,36 @@ public class ResultsActivity extends ListActivity {
 				if (null != result) {
 					Toast.makeText(mContext, "ERROR: refreshing data from the server failed!" + result, 20).show();
 				} else {
+//		    		refreshDisplayData();
+
 		    		//Make a data list
-		    		SimpleAdapter adapter = (SimpleAdapter)getListAdapter();
-		    		resultTextList = new ArrayList<Map<String, String>>();
-		    		extractResultDisplayMap(resultTextList);
-		    		adapter.notifyDataSetChanged();
+//		    		SimpleAdapter adapter = (SimpleAdapter)getListAdapter();
+//		    		resultTextList = new ArrayList<Map<String, String>>();
+//		    		extractResultDisplayMap(resultTextList);
+//		    		adapter.notifyDataSetChanged();
 //TODO: remove
 //        			ListAdapter adapter = new SimpleAdapter(listActivity, resultTextList , R.layout.result_list_item,
 //        		    	                    new String[] { "result", "timestamp" },
 //        		        	                new int[] { R.id.list_text_1, R.id.list_text_2 });
 //        			listActivity.setListAdapter(adapter);
-				}
+//				}
 //				if (buttonToEnableAfterRefresh != null) {
 //					buttonToEnableAfterRefresh.setEnabled(true);
-//				}
+				}
 			}
 		}.execute();
 	}
+	
+    @Override
+	public void onAuthenticationComplete() {
+		//TBD
+		try {
+			resultsSynchronizer.readResultsViaRest();
+    		refreshDisplayData();
+//TODO: remove wait cursor
+		}
+		catch (Exception e) {
+			Toast.makeText(mContext, "ERROR: refreshing data from the server failed!", 20).show();
+		}
+    }
 }
