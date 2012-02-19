@@ -9,6 +9,7 @@ import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import android.app.ListActivity;
+import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -25,6 +26,7 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.biomerieux.bmxconnect.shared.rest.Result;
@@ -42,9 +44,11 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
     private ResultsSynchronizer resultsSynchronizer;
     private ResultsDataManager resultsDataManager;
     private RegistrationHelper registrationHelper;
-    
+    private ProgressDialog progressDialog;
     private List<Map<String, String>> resultTextList;
 
+    private TextView lastUpdatedTime;
+    
     /**
      * A {@link BroadcastReceiver} to receive the response from a register or
      * unregister request, and to update the UI.
@@ -89,15 +93,17 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-
+		
 		registrationHelper = new RegistrationHelper(this);
 		resultsSynchronizer = new ResultsSynchronizer(registrationHelper);
 	    resultsDataManager = new ResultsDataManager();
-		
+	    
         objectMapper = new ObjectMapper();
     	objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 		
 		setContentView(R.layout.result_list);
+		
+		lastUpdatedTime = (TextView) findViewById(R.id.lastUpdateTextView);
 
 		//Make a data list
 		resultTextList = new ArrayList<Map<String, String>>();
@@ -145,16 +151,18 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
 	}
 
 	private void refreshDisplayData() {
-		extractResultDisplayMap(resultTextList);
+		extractResultDisplayMap();
 		
 		//Make a new listadapter
         ListAdapter adapter = new SimpleAdapter(this, resultTextList , R.layout.result_list_item,
 		                        new String[] { "result", "timestamp" },
 		                        new int[] { R.id.list_text_1, R.id.list_text_2 });
 		setListAdapter(adapter);
+
+		displayLastUpdatedTime();
 	}	
 
-	private List<Map<String, String>> extractResultDisplayMap(List<Map<String, String>> resultTextList) {
+	private List<Map<String, String>> extractResultDisplayMap() {
         final SharedPreferences prefs = Util.getSharedPreferences(mContext);
         try {
         	ResultList results = resultsDataManager.readSavedResults(prefs);
@@ -177,6 +185,12 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
 		return resultTextList;
 	}
 
+	private void displayLastUpdatedTime() {
+		final SharedPreferences prefs = Util.getSharedPreferences(mContext);
+		String lastUpdate = resultsDataManager.readLastUpdatedTime(prefs);
+		lastUpdatedTime.setText("Last Updated: \n" + lastUpdate);
+	}
+	
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
@@ -193,7 +207,8 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
     	
     	switch(item.getItemId()) {
         case R.id.refresh_menu_item :
-	    	Toast.makeText(context, "Refreshing data from the server.  This may take a few minutes.", 20).show();
+//	    	Toast.makeText(context, "Refreshing data from the server.  This may take a few minutes.", 20).show();
+		    progressDialog = ProgressDialog.show(ResultsActivity.this, "", "Synchronizing. Please wait...", true);
 			refreshDataFromServerAsync();
         	return true;
         default:
@@ -252,6 +267,7 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
 			resultsSynchronizer.readResultsViaRest();
     		refreshDisplayData();
 //TODO: remove wait cursor
+			progressDialog.dismiss();
 		}
 		catch (Exception e) {
 			Toast.makeText(mContext, "ERROR: refreshing data from the server failed!", 20).show();

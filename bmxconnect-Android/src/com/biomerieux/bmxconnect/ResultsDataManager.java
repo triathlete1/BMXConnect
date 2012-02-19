@@ -3,6 +3,7 @@ package com.biomerieux.bmxconnect;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.util.Date;
 
 import org.apache.commons.io.IOUtils;
 import org.codehaus.jackson.map.DeserializationConfig;
@@ -14,9 +15,11 @@ import android.util.Log;
 
 import com.biomerieux.bmxconnect.shared.rest.Result;
 import com.biomerieux.bmxconnect.shared.rest.ResultList;
+import com.biomerieux.bmxconnect.shared.util.DateFormattingUtil;
 
 public class ResultsDataManager {
 	private static final String RESULT_DATA_PREFERENCES_KEY = "jsonResults";
+	private static final String LAST_UPDATED_TIME_PREFERENCES_KEY = "lastUpdatedTime";
 
 	/**
      * Tag for logging.
@@ -24,10 +27,12 @@ public class ResultsDataManager {
     private static final String TAG = "ResultsDataManager";
 
 	private ObjectMapper objectMapper;
+	private final DateFormattingUtil dateFormattingUtil;
 
 	public ResultsDataManager() {
         objectMapper = new ObjectMapper();
     	objectMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    	dateFormattingUtil = new DateFormattingUtil();
 	}
 
 //  public void clearResultData(final SharedPreferences prefs) {
@@ -35,7 +40,25 @@ public class ResultsDataManager {
 //		editor.putString(RESULT_DATA_PREFERENCES_KEY, null);
 //		editor.commit();
 //  }
-  
+	
+	public String readLastUpdatedTime(final SharedPreferences prefs) {
+		return prefs.getString(LAST_UPDATED_TIME_PREFERENCES_KEY, null);
+	}
+
+	private void storeJsonResults(final SharedPreferences prefs, String jsonString) {
+		Editor editor = prefs.edit();
+		editor.putString(RESULT_DATA_PREFERENCES_KEY, jsonString);
+		editor.putString(LAST_UPDATED_TIME_PREFERENCES_KEY, dateFormattingUtil.formatDateTime(new Date()));
+		editor.commit();
+	}
+
+	public void addNewResult(final SharedPreferences prefs, Result result) {
+		ResultList results = readSavedResults(prefs);
+		results.getResults().add(0, result);
+		String jsonString = createJsonResultString(results);
+		storeJsonResults(prefs, jsonString);
+	}
+	
 	public String storeJsonDataInUserPrefs(final SharedPreferences prefs, InputStream instream) throws IOException {
 		StringWriter writer = new StringWriter();
 		IOUtils.copy(instream, writer, "UTF-8");
@@ -43,20 +66,8 @@ public class ResultsDataManager {
 		
 		//TODO: check for html = auth failure
 		
-		Editor editor = prefs.edit();
-		editor.putString(RESULT_DATA_PREFERENCES_KEY, jsonString);
-		editor.commit();
+		storeJsonResults(prefs, jsonString);
 		return jsonString;
-	}
-
-	public void addNewResult(final SharedPreferences prefs, Result result) {
-		ResultList results = readSavedResults(prefs);
-		results.getResults().add(0, result);
-		String resultString = createJsonResultString(results);
-		
-		Editor editor = prefs.edit();
-		editor.putString(RESULT_DATA_PREFERENCES_KEY, resultString);
-		editor.commit();
 	}
 	
 	public ResultList readSavedResults(final SharedPreferences prefs) {

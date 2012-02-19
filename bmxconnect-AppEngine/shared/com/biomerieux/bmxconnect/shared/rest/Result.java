@@ -1,19 +1,23 @@
 package com.biomerieux.bmxconnect.shared.rest;
 
 import java.io.Serializable;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.codehaus.jackson.annotate.JsonAutoDetect;
+import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.annotate.JsonProperty;
+
+import com.biomerieux.bmxconnect.shared.util.DateFormattingUtil;
 
 @JsonAutoDetect(JsonMethod.NONE)
 //@JsonIgnoreProperties({"key", "ownerKey"})
 public class Result implements Serializable {
 	private static final long serialVersionUID = 1L;
 
+	@JsonIgnore
+	private static final DateFormattingUtil dateFormattingUtil = new DateFormattingUtil();
+	
 	@JsonProperty("owner") private String accountName;
 	@JsonProperty private String result;
 	@JsonProperty private Date resultDate;
@@ -46,26 +50,11 @@ public class Result implements Serializable {
 	}
 
 	public String getResultDateString() {
-		if (resultDate == null) {
-			return "null";
-		}
-		
-	    String dateString = createDateFormatter().format(resultDate);
-	    return dateString;
+	    return dateFormattingUtil.formatDateTime(getResultDate());
 	}
 
 	public void setResultDateString(String dateString) {
-		try {
-			Date date = createDateFormatter().parse(dateString);
-			setResultDate(date);
-		} catch (ParseException e) {
-			setResultDate(null);
-		}
-	}
-
-	private SimpleDateFormat createDateFormatter() {
-		SimpleDateFormat sdf = new SimpleDateFormat("MM/dd hh:mm a");
-		return sdf;
+		setResultDate(dateFormattingUtil.convertDateTimeStringToDate(dateString));
 	}
 
 	@Override

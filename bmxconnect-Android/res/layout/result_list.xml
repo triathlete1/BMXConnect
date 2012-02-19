@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent">
-    
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="wrap_content"
+    android:layout_height="fill_parent"
+    android:layout_gravity="bottom" >
+    
     <TextView
         android:id="@+id/header"
         android:layout_width="fill_parent"
@@ -16,7 +16,7 @@
         android:text="@string/app_name"
         android:textColor="#ffffff"
         android:textSize="16dip" />
-
+    
     <ImageView
         android:id="@+id/imageView1"
         android:layout_width="wrap_content"
@@ -32,8 +32,8 @@
 		android:id="@id/android:list"
 		android:layout_width="fill_parent"
 		android:layout_height="fill_parent"
-		android:layout_below="@+id/header"
-        android:fillViewport="true" />
+		android:layout_below="@+id/header"        android:fillViewport="true" />
+
 	<TextView
 	    android:id="@id/android:empty"
 	    style="@android:style/TextAppearance.Medium"
@@ -51,8 +51,8 @@
         android:id="@+id/scrollView1"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_below="@+id/header" >
-                <LinearLayout
+        android:layout_below="@+id/header" >        
+        <LinearLayout
             android:id="@+id/linearLayout1"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
@@ -74,4 +74,16 @@
 
     </ScrollView>
  -->
+
+	<TextView
+	    android:id="@+id/lastUpdateTextView"
+	    android:layout_width="150dip"
+	    android:layout_height="60dip"
+	    android:layout_alignBottom="@+id/header"
+	    android:layout_alignParentRight="true"
+	    android:layout_alignParentTop="true"
+	    android:gravity="center|right"
+	    android:text="Last updated:"
+	    android:textSize="10dip" />
+
 </RelativeLayout>

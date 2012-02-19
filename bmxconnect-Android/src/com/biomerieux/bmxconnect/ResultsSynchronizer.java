@@ -29,7 +29,7 @@ public class ResultsSynchronizer {
     private static final String REST_RESULTS_URI = "/rest/results";
 
     private final RegistrationHelper registrationHelper;
-    private ResultsDataManager resultsDataManager;
+    private final ResultsDataManager resultsDataManager;
 
 	public ResultsSynchronizer(final RegistrationHelper registrationHelper) {
     	this.registrationHelper = registrationHelper;
