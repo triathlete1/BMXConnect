@@ -15,15 +15,14 @@
  */
 package com.biomerieux.bmxconnect.server;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.logging.Logger;
 
-import javax.persistence.EntityManager;
 import javax.servlet.ServletContext;
 
+import com.biomerieux.bmxconnect.shared.util.DateFormattingUtil;
 import com.google.android.c2dm.server.C2DMessaging;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.users.User;
@@ -39,8 +38,9 @@ public class MessageSenderService {
 
   private static final DAO<ResultRecord> resultRecordDao = new DAO<ResultRecord>();
   private static final DAO<DeviceInfo> deviceInfoDao = new DAO<DeviceInfo>();
-  
-  public static String sendMessage(ServletContext context, String recipient, String message) {
+	private static final DateFormattingUtil dateFormattingUtil = new DateFormattingUtil();
+
+  public static String sendMessage(ServletContext context, String recipient, String message, Date messageDateTime) {
     try {
       UserService userService = UserServiceFactory.getUserService();
       User user = userService.getCurrentUser();
@@ -49,12 +49,10 @@ public class MessageSenderService {
         sender = user.getEmail();
       }
 
-      Date now = Calendar.getInstance().getTime();
-
       log.info("sendMessage: sender = " + sender);
       log.info("sendMessage: recipient = " + recipient);
       log.info("sendMessage: message = " + message);
-//      log.info("sendMessage: date = " + date);
+      log.info("sendMessage: date = " + messageDateTime);
 
       // ok = we sent to at least one device.
       boolean ok = false;
@@ -94,13 +92,14 @@ public class MessageSenderService {
         }
 
         // Persist the message
-        ResultRecord result = assembleResult(message, now, recipient);
+        ResultRecord result = assembleResult(message, messageDateTime, recipient);
         if (0 == numSendAttempts) {
         	resultRecordDao.save(result);
 			log.info("Saved result to database: " + result);
         }
 
-        res = doSendViaC2dm(result.getResult(), result.getResultDateString(), result.getAccountName(), push, collapseKey, deviceInfo);
+        String resultDateString = dateFormattingUtil.formatDateTime(messageDateTime, TimeZone.getTimeZone("UTC"));
+        res = doSendViaC2dm(result.getResult(), resultDateString, result.getAccountName(), push, collapseKey, deviceInfo);
         numSendAttempts++;
 
         if (res) {

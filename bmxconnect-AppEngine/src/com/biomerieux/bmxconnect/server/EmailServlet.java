@@ -1,7 +1,10 @@
 package com.biomerieux.bmxconnect.server;
 
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Properties;
+import java.util.TimeZone;
 import java.util.logging.Logger;
 
 import javax.mail.Address;
@@ -13,8 +16,6 @@ import javax.mail.internet.MimeMessage;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
-import com.google.appengine.api.users.User;
 
 public class EmailServlet extends HttpServlet {
 
@@ -30,6 +31,8 @@ public class EmailServlet extends HttpServlet {
 		try {
 			MimeMessage emailMessage = new MimeMessage(email, req.getInputStream());
 			String subject = emailMessage.getSubject();
+//TODO: Get the result date/time from the email message
+			Date messageDateTime = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime();
 //			String body = getText(emailMessage);
 			Address[] addresses = emailMessage.getAllRecipients();
 			String targetAccount = "unknown";
@@ -47,7 +50,7 @@ public class EmailServlet extends HttpServlet {
 			targetAccount += "@gmail.com";
 			
 		    log.info("sending to: " + targetAccount + ", message: " + subject);
-	        MessageSenderService.sendMessage(getServletContext(), targetAccount, subject);
+	        MessageSenderService.sendMessage(getServletContext(), targetAccount, subject, messageDateTime);
 			
 		} catch (Exception e) {
 			e.printStackTrace();

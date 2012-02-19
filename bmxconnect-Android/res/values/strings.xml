@@ -67,7 +67,7 @@
     <!-- Notification message [CHAR LIMIT=NONE] -->
     <string name="unregistration_succeeded">Unegistered %1$s for C2DM messaging.</string>
     <string name="result_list_text">Result Notifications</string>
-    <string name="no_notifications_exist">No notifications for this account.</string>
+    <string name="no_notifications_exist">No notifications.</string>
     <string name="refresh">Refresh</string>
 
 </resources>

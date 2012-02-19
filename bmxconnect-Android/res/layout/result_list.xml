@@ -13,7 +13,7 @@
         android:background="@drawable/gradient"
         android:gravity="center_vertical"
         android:paddingLeft="10dip"
-        android:text="@string/app_name"
+        android:text="@string/result_list_text"
         android:textColor="#ffffff"
         android:textSize="16dip" />
     

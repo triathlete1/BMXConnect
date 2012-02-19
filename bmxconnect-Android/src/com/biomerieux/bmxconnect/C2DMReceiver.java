@@ -16,16 +16,16 @@
 package com.biomerieux.bmxconnect;
 
 import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
 
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 
 import com.biomerieux.bmxconnect.shared.rest.Result;
+import com.biomerieux.bmxconnect.shared.util.DateFormattingUtil;
 import com.google.android.c2dm.C2DMBaseReceiver;
 
 /**
@@ -43,12 +43,14 @@ public class C2DMReceiver extends C2DMBaseReceiver {
 
     ResultsDataManager resultsDataManager;
     final Intent updateUIOnMessageIntent;
+    private DateFormattingUtil dateFormattingUtil;
     
     public C2DMReceiver() {
         super(Setup.SENDER_ID);
         
         resultsDataManager = new ResultsDataManager();
         updateUIOnMessageIntent = new Intent(Util.UPDATE_UI_ON_MESSAGE_INTENT);
+        dateFormattingUtil = new DateFormattingUtil();
     }
 
     /**
@@ -100,19 +102,21 @@ public class C2DMReceiver extends C2DMBaseReceiver {
         String sender = (String) extras.get("sender");
         String message = (String) extras.get("message");
         String date = (String) extras.get("datetime");
+        Date localDate = dateFormattingUtil.convertUTCDateTimeStringToLocalDate(date);
         
         // Store the new result
         final SharedPreferences prefs = Util.getSharedPreferences(this);
         Result result = new Result();
         result.setAccountName(sender);
         result.setResult(message);
-		result.setResultDateString(date);
+		result.setResultDate(localDate);
 		resultsDataManager.addNewResult(prefs, result);
 
         // TODO: display unacknowledged result count with a link to an activity that shows a list - user should be able to ack items on the list to clear them
 
         // Show a result notification
-        Util.generateResultNotification(context, message, date);
+		String localDateString = dateFormattingUtil.formatDateTime(localDate);
+        Util.generateResultNotification(context, message, localDateString);
         
         // Refresh the UI
         context.sendBroadcast(updateUIOnMessageIntent);

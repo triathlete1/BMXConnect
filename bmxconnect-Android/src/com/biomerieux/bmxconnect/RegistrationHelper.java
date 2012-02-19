@@ -112,7 +112,7 @@ public class RegistrationHelper {
 //        }
     }
 
-    public void refreshAuthenticationToken(final AuthenticationCallback callback) {
+    public void refreshAuthenticationToken(final AuthenticationCallback callback, final Object... params) {
         final SharedPreferences prefs = Util.getSharedPreferences(mContext);
         String accountName = prefs.getString(Util.ACCOUNT_NAME, null);
         if (null == accountName) {
@@ -138,7 +138,7 @@ public class RegistrationHelper {
                     String authCookie = accountName + ":false:" + accountName;
                     prefs.edit().putString(Util.AUTH_COOKIE, "dev_appserver_login=" + authCookie).commit();
                     prefs.edit().putString(Util.AUTH_COOKIE_RAW, authCookie).commit();
-                    callback.onAuthenticationComplete();
+                    callback.onAuthenticationComplete(params);
 //                    C2DMessaging.register(mContext, Setup.SENDER_ID);
                 } else {
                     // Get the auth token from the AccountManager and convert
@@ -160,7 +160,7 @@ public class RegistrationHelper {
                                     editor.putString(Util.AUTH_COOKIE_RAW, authCookie);
                                     editor.commit();
 //                                    C2DMessaging.register(mContext, Setup.SENDER_ID);
-                                    callback.onAuthenticationComplete();
+                                    callback.onAuthenticationComplete(params);
                                 }
                             }, null);
                         }

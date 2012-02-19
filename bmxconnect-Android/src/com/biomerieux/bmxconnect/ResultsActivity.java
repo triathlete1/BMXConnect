@@ -31,11 +31,12 @@ import android.widget.Toast;
 
 import com.biomerieux.bmxconnect.shared.rest.Result;
 import com.biomerieux.bmxconnect.shared.rest.ResultList;
+import com.biomerieux.bmxconnect.shared.util.DateFormattingUtil;
 
 /**
  * Class refreshes data from the server.
  */
-public class ResultsActivity extends ListActivity implements AuthenticationCallback {
+public class ResultsActivity extends ListActivity implements ResultSyncCallback {
 
     private Context mContext = this;
 
@@ -44,6 +45,7 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
     private ResultsSynchronizer resultsSynchronizer;
     private ResultsDataManager resultsDataManager;
     private RegistrationHelper registrationHelper;
+    private DateFormattingUtil dateFormattingUtil;
     private ProgressDialog progressDialog;
     private List<Map<String, String>> resultTextList;
 
@@ -94,6 +96,7 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		
+		dateFormattingUtil = new DateFormattingUtil();
 		registrationHelper = new RegistrationHelper(this);
 		resultsSynchronizer = new ResultsSynchronizer(registrationHelper);
 	    resultsDataManager = new ResultsDataManager();
@@ -170,15 +173,10 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
 			for (Result result : results.getResults()) {
 		    	Map<String, String> resultText = new HashMap<String, String>();
 				resultText.put("result", result.getResult());
-				resultText.put("timestamp", result.getResultDateString());
+				String dateString = dateFormattingUtil.formatDateTime(result.getResultDate());
+				resultText.put("timestamp", dateString);
 				resultTextList.add(resultText);
 			}
-//		} catch (JsonParseException e) {
-//			Toast.makeText(mContext, "Unexpected exception: " + Util.getStackTrace(e), 15);
-//		} catch (JsonMappingException e) {
-//			Toast.makeText(mContext, "Unexpected exception: " + Util.getStackTrace(e), 15);
-//		} catch (IOException e) {
-//			Toast.makeText(mContext, "Unexpected exception: " + Util.getStackTrace(e), 15);
 		} catch (Exception e) {
 			Toast.makeText(mContext, "Unexpected exception: " + Util.getStackTrace(e), 15).show();
 		}
@@ -203,12 +201,8 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
 
     @Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-    	Context context = getApplicationContext();
-    	
     	switch(item.getItemId()) {
         case R.id.refresh_menu_item :
-//	    	Toast.makeText(context, "Refreshing data from the server.  This may take a few minutes.", 20).show();
-		    progressDialog = ProgressDialog.show(ResultsActivity.this, "", "Synchronizing. Please wait...", true);
 			refreshDataFromServerAsync();
         	return true;
         default:
@@ -218,59 +212,37 @@ public class ResultsActivity extends ListActivity implements AuthenticationCallb
 	}
 
 	private void refreshDataFromServerAsync() {
-		// Use an AsyncTask to avoid blocking the UI thread
+	    progressDialog = ProgressDialog.show(ResultsActivity.this, "", "Synchronizing. Please wait...", true);
+
+	    // Use an AsyncTask to avoid blocking the UI thread
 		new AsyncTask<Void, Void, String>() {
 			@Override
 			protected String doInBackground(Void... arg0) {
-				//TODO: refresh from server and show wait dialog - possibly optimize the refresh using the count/date of last entry?
-//		    	Toast.makeText(mContext, "Refreshing data from the server.  This may take a few minutes.", 20).show();
 		    	try {
-//TODO: begin wait cursor
-		    		resultsSynchronizer.readResultsViaRestAsync((AuthenticationCallback)mContext);
+		    		// Register this activity as the authentication callback handler (see onAuthenticationComplete() below)
+		    		resultsSynchronizer.readResultsViaRestAsync((ResultSyncCallback)mContext);
 				} catch(Exception e) {
 		    		Toast.makeText(mContext, "ERROR: refreshing data from the server failed!" + e.getMessage(), 20).show();
 					return e.getMessage();
 		    	}
 				return null;
 			}
-			
-			@Override
-			protected void onPostExecute(String result) {
-				//TBD
-				if (null != result) {
-					Toast.makeText(mContext, "ERROR: refreshing data from the server failed!" + result, 20).show();
-				} else {
-//		    		refreshDisplayData();
-
-		    		//Make a data list
-//		    		SimpleAdapter adapter = (SimpleAdapter)getListAdapter();
-//		    		resultTextList = new ArrayList<Map<String, String>>();
-//		    		extractResultDisplayMap(resultTextList);
-//		    		adapter.notifyDataSetChanged();
-//TODO: remove
-//        			ListAdapter adapter = new SimpleAdapter(listActivity, resultTextList , R.layout.result_list_item,
-//        		    	                    new String[] { "result", "timestamp" },
-//        		        	                new int[] { R.id.list_text_1, R.id.list_text_2 });
-//        			listActivity.setListAdapter(adapter);
-//				}
-//				if (buttonToEnableAfterRefresh != null) {
-//					buttonToEnableAfterRefresh.setEnabled(true);
-				}
-			}
 		}.execute();
 	}
 	
     @Override
-	public void onAuthenticationComplete() {
-		//TBD
-		try {
-			resultsSynchronizer.readResultsViaRest();
-    		refreshDisplayData();
-//TODO: remove wait cursor
-			progressDialog.dismiss();
+	public void onSynchronizationComplete(String result) {
+		if (result != null) {
+			Toast.makeText(mContext, "ERROR: refreshing data from the server failed!" + result, 20).show();
 		}
-		catch (Exception e) {
-			Toast.makeText(mContext, "ERROR: refreshing data from the server failed!", 20).show();
+		else {
+			refreshDisplayData();
 		}
-    }
+		
+		// Remove wait cursor
+		progressDialog.dismiss();
+		
+//		if (buttonToEnableAfterRefresh != null) {
+//			buttonToEnableAfterRefresh.setEnabled(true);
+	}
 }

@@ -15,12 +15,13 @@ import org.apache.http.impl.cookie.BasicClientCookie;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.biomerieux.bmxconnect.shared.rest.ResultList;
 
-public class ResultsSynchronizer {
+public class ResultsSynchronizer implements AuthenticationCallback {
 	/**
      * Tag for logging.
      */
@@ -36,12 +37,34 @@ public class ResultsSynchronizer {
     	resultsDataManager = new ResultsDataManager();
     }
 
-	public void readResultsViaRestAsync(AuthenticationCallback callback) {
+	public void readResultsViaRestAsync(ResultSyncCallback resultSyncCallback) {
 
     	// Make sure the auth cookie is current
-    	registrationHelper.refreshAuthenticationToken(callback);
+    	registrationHelper.refreshAuthenticationToken(this, resultSyncCallback);
 	}
-
+	
+    @Override
+	public void onAuthenticationComplete(final Object... params) {
+		// Use an AsyncTask to avoid blocking the UI thread
+		new AsyncTask<Void, Void, String>() {
+			@Override
+			protected String doInBackground(Void... arg0) {
+				try {
+					readResultsViaRest();
+		    		return null;
+				}
+				catch (Exception e) {
+					return e.getMessage();
+				}
+			}
+			
+			@Override
+			protected void onPostExecute(String result) {
+				((ResultSyncCallback)params[0]).onSynchronizationComplete(result);
+			}
+		}.execute();
+    }
+    
 	public ResultList readResultsViaRest() {
 
     	final Context mContext = registrationHelper.getmContext();

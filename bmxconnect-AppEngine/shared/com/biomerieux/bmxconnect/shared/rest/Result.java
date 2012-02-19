@@ -4,20 +4,14 @@ import java.io.Serializable;
 import java.util.Date;
 
 import org.codehaus.jackson.annotate.JsonAutoDetect;
-import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.annotate.JsonProperty;
-
-import com.biomerieux.bmxconnect.shared.util.DateFormattingUtil;
 
 @JsonAutoDetect(JsonMethod.NONE)
 //@JsonIgnoreProperties({"key", "ownerKey"})
 public class Result implements Serializable {
 	private static final long serialVersionUID = 1L;
 
-	@JsonIgnore
-	private static final DateFormattingUtil dateFormattingUtil = new DateFormattingUtil();
-	
 	@JsonProperty("owner") private String accountName;
 	@JsonProperty private String result;
 	@JsonProperty private Date resultDate;
@@ -47,14 +41,6 @@ public class Result implements Serializable {
 
 	public void setResultDate(Date resultDate) {
 		this.resultDate = resultDate;
-	}
-
-	public String getResultDateString() {
-	    return dateFormattingUtil.formatDateTime(getResultDate());
-	}
-
-	public void setResultDateString(String dateString) {
-		setResultDate(dateFormattingUtil.convertDateTimeStringToDate(dateString));
 	}
 
 	@Override

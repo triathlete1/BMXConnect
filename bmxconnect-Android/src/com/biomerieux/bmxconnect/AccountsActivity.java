@@ -147,7 +147,7 @@ public class AccountsActivity extends Activity implements AuthenticationCallback
         }
     }
 
-    public void onAuthenticationComplete() {
+    public void onAuthenticationComplete(final Object... params) {
     	C2DMessaging.register(mContext, Setup.SENDER_ID);
     }
     

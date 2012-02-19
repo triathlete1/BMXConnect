@@ -15,6 +15,9 @@
  */
 package com.biomerieux.bmxconnect.server;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.logging.Logger;
 
 import javax.servlet.ServletContext;
@@ -44,7 +47,8 @@ public class Message {
   public String send() {
     log.info("send " + this);
     try {
-      return MessageSenderService.sendMessage(context, recipient, message);
+        Date now = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime();
+      return MessageSenderService.sendMessage(context, recipient, message, now);
     } catch (Exception e) {
       return "Failure: Got exception in send: " + e.getMessage();
     }

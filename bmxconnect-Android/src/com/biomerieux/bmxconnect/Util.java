@@ -16,7 +16,6 @@
 package com.biomerieux.bmxconnect;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,8 +27,6 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-
-import org.apache.commons.io.IOUtils;
 
 import android.app.Notification;
 import android.app.NotificationManager;
