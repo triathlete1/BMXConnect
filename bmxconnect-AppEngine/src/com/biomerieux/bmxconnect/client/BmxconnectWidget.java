@@ -15,6 +15,8 @@
  */
 package com.biomerieux.bmxconnect.client;
 
+import com.biomerieux.bmxconnect.client.MyRequestFactory.MessageRequest;
+import com.biomerieux.bmxconnect.shared.MessageProxy;
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.InputElement;
@@ -33,10 +35,6 @@ import com.google.web.bindery.event.shared.SimpleEventBus;
 import com.google.web.bindery.requestfactory.shared.Receiver;
 import com.google.web.bindery.requestfactory.shared.Request;
 import com.google.web.bindery.requestfactory.shared.ServerFailure;
-
-import com.biomerieux.bmxconnect.client.MyRequestFactory.HelloWorldRequest;
-import com.biomerieux.bmxconnect.client.MyRequestFactory.MessageRequest;
-import com.biomerieux.bmxconnect.shared.MessageProxy;
 
 public class BmxconnectWidget extends Composite {
 

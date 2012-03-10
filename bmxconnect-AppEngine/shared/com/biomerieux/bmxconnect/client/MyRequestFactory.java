@@ -15,14 +15,13 @@
  */
 package com.biomerieux.bmxconnect.client;
 
+import com.biomerieux.bmxconnect.shared.MessageProxy;
+import com.biomerieux.bmxconnect.shared.RegistrationInfoProxy;
 import com.google.web.bindery.requestfactory.shared.InstanceRequest;
 import com.google.web.bindery.requestfactory.shared.Request;
 import com.google.web.bindery.requestfactory.shared.RequestContext;
 import com.google.web.bindery.requestfactory.shared.RequestFactory;
 import com.google.web.bindery.requestfactory.shared.ServiceName;
-
-import com.biomerieux.bmxconnect.shared.MessageProxy;
-import com.biomerieux.bmxconnect.shared.RegistrationInfoProxy;
 
 public interface MyRequestFactory extends RequestFactory {
 

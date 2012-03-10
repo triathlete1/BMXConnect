@@ -21,7 +21,6 @@ import java.util.logging.Logger;
 
 import javax.persistence.EntityManager;
 
-//import com.google.android.c2dm.server.PMF;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.users.User;

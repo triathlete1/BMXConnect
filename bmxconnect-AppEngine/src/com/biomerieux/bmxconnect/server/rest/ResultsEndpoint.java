@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -17,12 +15,9 @@ import javax.ws.rs.core.Response;
 import org.mortbay.log.Log;
 
 import com.biomerieux.bmxconnect.server.DAO;
-import com.biomerieux.bmxconnect.server.EMFService;
 import com.biomerieux.bmxconnect.server.ResultRecord;
 import com.biomerieux.bmxconnect.shared.rest.Result;
 import com.biomerieux.bmxconnect.shared.rest.ResultList;
-import com.google.appengine.api.datastore.Key;
-import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.users.User;
 import com.google.appengine.api.users.UserService;
 import com.google.appengine.api.users.UserServiceFactory;
